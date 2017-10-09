@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>SHARE - MLD SPOT INTERACTIVE WALL</title>
+
+    <style media="screen">
+      body{
+        background: #2d2d2d;
+        font-family: Helvetica;
+      }
+      .titleContainer{
+        background: #c52525;
+        padding: 5px 10px;
+        margin-bottom: 20px;
+      }
+      h1 {
+        font-weight: normal;
+        margin: 2px 0;
+        color: #fff;
+        font-size: 25px;
+      }
+      h2{
+        margin: 2px 0;
+        color: #fff;
+        font-weight: normal;
+        font-size: 15px;
+      }
+      .container{
+        background: #fff;
+        border-radius: 15px;
+        width: 400px;
+        margin: 50px auto;
+        padding-bottom: 20px;
+        text-align: center;
+        overflow: hidden;
+      }
+      #formContainer{
+        padding: 10px 20px;
+        display: none;
+      }
+      #formContainer.active{
+        display: block;
+      }
+
+      #form{
+        border-top: 1px #ccc solid;
+        padding-top: 10px;
+      }
+      textarea{
+        width: 90%;
+        padding: 3%;
+        border-radius: 10px;
+        height: 100px;
+      }
+      #submit{
+        background-color: #4267b2;
+        border: none;
+        border-radius: 5px;
+        padding: 10px 20px;
+        color: #fff;
+        margin-top: 10px;
+        font-family: Helvetica;
+        font-size: 20px;
+        transition: 0.3s ease;
+      }
+      #submit.done{
+        background-color: #21e05c;
+      }
+
+      input{
+        margin: 10px;
+      }
+
+      #profile{
+        margin: 5px;
+        display: none;
+      }
+      #profile.active{
+        margin: 5px;
+        display: block;
+      }
+      #profile #pp{
+        border-radius: 50%;
+        width: 150px;
+        height: 150px;
+        border: 1px solid #ccc;
+      }
+      #profile #name{
+        margin: 2px;
+      }
+
+      h6{
+        margin: 5px;
+        color: #888;
+        font-weight: normal;
+        font-size: 15px;
+      }
+    </style>
+
+  </head>
+  <body>
+
+<script type="text/javascript" src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+
+    <script>
+
+      var id;
+
+      window.fbAsyncInit = function() {
+        FB.init({
+          appId      : '141511589920152',
+          xfbml      : true,
+          version    : 'v2.10'
+        });
+        FB.AppEvents.logPageView();
+      };
+
+      (function(d, s, id){
+         var js, fjs = d.getElementsByTagName(s)[0];
+         if (d.getElementById(id)) {return;}
+         js = d.createElement(s); js.id = id;
+         js.src = "https://connect.facebook.net/en_US/sdk.js";
+         fjs.parentNode.insertBefore(js, fjs);
+       }(document, 'script', 'facebook-jssdk'));
+
+       function checkLoginState() {
+         FB.getLoginStatus(function(response) {
+           if (response.status === 'connected') {
+            console.log(response.authResponse.accessToken);
+
+             FB.api('/me', function(response) {
+                console.log(JSON.stringify(response));
+                id = response.id;
+                document.getElementById('profile').setAttribute("class", "active");
+                document.getElementById('pp').setAttribute("src", "http://graph.facebook.com/" + response.id + "/picture?type=normal");
+                document.getElementById('name').innerHTML = response.name;
+             });
+
+             document.getElementById('token').value = response.authResponse.accessToken;
+
+             document.getElementById('formContainer').setAttribute("class", "active");
+
+           }
+         });
+       }
+
+       function autoLogout(){
+         FB.logout(function(response) {
+            window.location.reload();
+
+            setTimeout(autoClose, 1000);
+
+          });
+       }
+
+       function autoClose(){
+          window.open('','_self').close();
+       }
+
+          $(document).on('submit', '#form', function(e) {
+
+            var message = document.getElementById('message').value;
+            var access_token = document.getElementById('token').value;
+            var fileid = document.getElementById('file');
+
+            var file = fileid.files[0];
+            var xhr = new XMLHttpRequest();
+            (xhr.upload || xhr).addEventListener('progress', function(e) {
+                var done = e.position || e.loaded
+                var total = e.totalSize || e.total;
+                console.log('xhr progress: ' + Math.round(done/total*100) + '%');
+            });
+            xhr.addEventListener('load', function(e) {
+                console.log('xhr upload complete', e, this.responseText);
+
+                document.getElementById('submit').setAttribute("class", "done");
+                document.getElementById('submit').value = "Completed";
+
+                setTimeout(autoLogout, 3000);
+
+            });
+            xhr.open('post', 'https://graph.facebook.com/me/photos', true);
+
+            var fd = new FormData;
+            fd.append('source', file);
+            fd.append('access_token', access_token);
+            fd.append('message', message);
+
+            xhr.send(fd);
+            document.getElementById('submit').value = "Processing";
+            e.preventDefault();
+            });
+
+       </script>
+
+       <div class="container">
+
+         <div class="titleContainer">
+           <h1>MLD SPOT Interactive Wall</h1>
+           <h2>Facebook Share</h2>
+         </div>
+
+
+         <div id="profile">
+           <img id="pp">
+           <h3 id="name"></h3>
+         </div>
+
+         <div class="fb-login-button" data-max-rows="1" data-size="large" data-button-type="login_with" data-show-faces="false" data-auto-logout-link="true" data-use-continue-as="false" scope="public_profile,email,publish_actions" onlogin="checkLoginState();"></div>
+
+         <div id="formContainer">
+           <form id="form" target="_blank" action="https://graph.facebook.com/me/photos" method="post" enctype="multipart/form-data">
+             <input name="source" type="file" id="file">
+             <input type="hidden" name="to" value="113342002047830"/>
+             <textarea id="message" name="message"/></textarea>
+             <input id="token" type="hidden" name="access_token"/>
+             <input id="submit" type="submit" value="Share Photo to Facebook">
+             <h6>Your account will be automatically logged out after share</h6>
+           </form>
+         </div>
+
+       </div>
+
+
+
+
+  </body>
+</html>
